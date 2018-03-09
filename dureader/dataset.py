@@ -62,6 +62,7 @@ class BRCDataset(object):
         with open(data_path) as fin:
             data_set = []
             for lidx, line in enumerate(fin):
+                # 每次加载一个json文件-sample
                 sample = json.loads(line.strip())
                 if train:
                     if len(sample['answer_spans']) == 0:
