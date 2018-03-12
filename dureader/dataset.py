@@ -65,6 +65,7 @@ class BRCDataset(object):
                 # 每次加载一个json文件-sample
                 sample = json.loads(line.strip())
                 if train:
+                    # 如果answer spans为空，或answer spans末尾超过了文档长度限制，则跳过
                     if len(sample['answer_spans']) == 0:
                         continue
                     if sample['answer_spans'][0][1] >= self.max_p_len:
@@ -78,6 +79,7 @@ class BRCDataset(object):
                 sample['passages'] = []
                 for d_idx, doc in enumerate(sample['documents']):
                     if train:
+                        # 在训练时，passages 存储每篇文档最相关段落，以及其是否在作答时被采纳
                         most_related_para = doc['most_related_para']
                         sample['passages'].append(
                             {'passage_tokens': doc['segmented_paragraphs'][most_related_para],
@@ -86,6 +88,7 @@ class BRCDataset(object):
                     else:
                         para_infos = []
                         for para_tokens in doc['segmented_paragraphs']:
+                            # para_tokens 每篇文档分词后的段落，question_tokens 问题分词
                             question_tokens = sample['segmented_question']
                             common_with_question = Counter(para_tokens) & Counter(question_tokens)
                             correct_preds = sum(common_with_question.values())
@@ -94,6 +97,7 @@ class BRCDataset(object):
                             else:
                                 recall_wrt_question = float(correct_preds) / len(question_tokens)
                             para_infos.append((para_tokens, recall_wrt_question, len(para_tokens)))
+                        # 排序 选出与question相比recall最高的para_tokens
                         para_infos.sort(key=lambda x: (-x[1], x[2]))
                         fake_passage_tokens = []
                         for para_info in para_infos[:1]:
@@ -119,15 +123,19 @@ class BRCDataset(object):
                       'passage_length': [],
                       'start_id': [],
                       'end_id': []}
+        # 当前batch的文档的最大passage数
         max_passage_num = max([len(sample['passages']) for sample in batch_data['raw_data']])
         max_passage_num = min(self.max_p_num, max_passage_num)
+        # 对每个样本（问题）
         for sidx, sample in enumerate(batch_data['raw_data']):
             for pidx in range(max_passage_num):
                 if pidx < len(sample['passages']):
                     batch_data['question_token_ids'].append(sample['question_token_ids'])
+                    # 问题长度
                     batch_data['question_length'].append(len(sample['question_token_ids']))
                     passage_token_ids = sample['passages'][pidx]['passage_token_ids']
                     batch_data['passage_token_ids'].append(passage_token_ids)
+                    # passage长度，不超过max_p_len
                     batch_data['passage_length'].append(min(len(passage_token_ids), self.max_p_len))
                 else:
                     batch_data['question_token_ids'].append([])
@@ -150,8 +158,11 @@ class BRCDataset(object):
         """
         Dynamically pads the batch_data with pad_id
         """
+        # 当前batch passage的定长
         pad_p_len = min(self.max_p_len, max(batch_data['passage_length']))
+        # question的定长
         pad_q_len = min(self.max_q_len, max(batch_data['question_length']))
+        # 截断和填充都使用同一切片操作
         batch_data['passage_token_ids'] = [(ids + [pad_id] * (pad_p_len - len(ids)))[: pad_p_len]
                                            for ids in batch_data['passage_token_ids']]
         batch_data['question_token_ids'] = [(ids + [pad_id] * (pad_q_len - len(ids)))[: pad_q_len]
@@ -194,7 +205,9 @@ class BRCDataset(object):
             if data_set is None:
                 continue
             for sample in data_set:
+                # 问题 token转换为id
                 sample['question_token_ids'] = vocab.convert_to_ids(sample['question_tokens'])
+                # 每篇文档的最相关段落 token转换为id
                 for passage in sample['passages']:
                     passage['passage_token_ids'] = vocab.convert_to_ids(passage['passage_tokens'])
 
@@ -217,6 +230,7 @@ class BRCDataset(object):
             data = self.test_set
         else:
             raise NotImplementedError('No data set named as {}'.format(set_name))
+        # 数据集大小
         data_size = len(data)
         indices = np.arange(data_size)
         if shuffle:

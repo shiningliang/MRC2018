@@ -80,13 +80,21 @@ class RCModel(object):
         Builds the computation graph with Tensorflow
         """
         start_t = time.time()
+        # 设置需传入的常量
         self._setup_placeholders()
+        # 对paragraph question做embedding
         self._embed()
+        # 对paragraph question分别用Bi-LSTM编码
         self._encode()
+        # 基于question-aware的passage编码
         self._match()
+        # 融合上下文的match passage再编码
         self._fuse()
+        # 使用pointer network计算每个位置为答案开头或结尾的概率
         self._decode()
+        # 对数似然损失，start end两部分损失取平均
         self._compute_loss()
+        # 选择优化算法
         self._create_train_op()
         self.logger.info('Time to build graph: {} s'.format(time.time() - start_t))
         param_num = sum([np.prod(self.sess.run(tf.shape(v))) for v in self.all_params])

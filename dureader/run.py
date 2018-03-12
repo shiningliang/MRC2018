@@ -117,19 +117,20 @@ def prepare(args):
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
 
-    # 构建词典
     logger.info('Building vocabulary...')
+    # 载入数据
     brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
                           args.train_files, args.dev_files, args.test_files)
+    # 构建词典
     vocab = Vocab(lower=True)
     for word in brc_data.word_iter('train'):
         vocab.add(word)
 
     unfiltered_vocab_size = vocab.size()
+    # 保留至少出现2次的token
     vocab.filter_tokens_by_cnt(min_cnt=2)
     filtered_num = unfiltered_vocab_size - vocab.size()
-    logger.info('After filter {} tokens, the final vocab size is {}'.format(filtered_num,
-                                                                            vocab.size()))
+    logger.info('After filter {} tokens, the final vocab size is {}'.format(filtered_num, vocab.size()))
 
     logger.info('Assigning embeddings...')
     vocab.randomly_init_embeddings(args.embed_size)

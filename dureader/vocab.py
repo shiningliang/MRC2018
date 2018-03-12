@@ -101,6 +101,7 @@ class Vocab(object):
         if token in self.token2id:
             idx = self.token2id[token]
         else:
+            # vocab中无此token，则添加token2id id2token
             idx = len(self.id2token)
             self.id2token[idx] = token
             self.token2id[token] = idx
@@ -134,6 +135,7 @@ class Vocab(object):
         """
         self.embed_dim = embed_dim
         self.embeddings = np.random.rand(self.size(), embed_dim)
+        # 填充符号和未知词符号初始化为0
         for token in [self.pad_token, self.unk_token]:
             self.embeddings[self.get_id(token)] = np.zeros([self.embed_dim])
 
