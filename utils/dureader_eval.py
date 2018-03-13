@@ -18,15 +18,14 @@
 This module computes evaluation metrics for DuReader dataset.
 """
 
-
 import argparse
 import json
 import sys
 import zipfile
 
 from collections import Counter
-from bleu_metric.bleu import Bleu
-from rouge_metric.rouge import Rouge
+from .bleu_metric.bleu import Bleu
+from .rouge_metric.rouge import Rouge
 
 EMPTY = ''
 YESNO_LABELS = set(['Yes', 'No', 'Depends'])
@@ -60,21 +59,21 @@ def data_check(obj, task):
     """
     assert 'question_id' in obj, "Missing 'question_id' field."
     assert 'question_type' in obj, \
-            "Missing 'question_type' field. question_id: {}".format(obj['question_type'])
+        "Missing 'question_type' field. question_id: {}".format(obj['question_type'])
 
     assert 'yesno_answers' in obj, \
-            "Missing 'yesno_answers' field. question_id: {}".format(obj['question_id'])
+        "Missing 'yesno_answers' field. question_id: {}".format(obj['question_id'])
     assert isinstance(obj['yesno_answers'], list), \
-            r"""'yesno_answers' field must be a list, if the 'question_type' is not
-            'YES_NO', then this field should be an empty list.
-            question_id: {}""".format(obj['question_id'])
+        r"""'yesno_answers' field must be a list, if the 'question_type' is not
+        'YES_NO', then this field should be an empty list.
+        question_id: {}""".format(obj['question_id'])
 
     assert 'entity_answers' in obj, \
-            "Missing 'entity_answers' field. question_id: {}".format(obj['question_id'])
+        "Missing 'entity_answers' field. question_id: {}".format(obj['question_id'])
     assert isinstance(obj['entity_answers'], list) \
-            and len(obj['entity_answers']) > 0, \
-            r"""'entity_answers' field must be a list, and has at least one element,
-            which can be a empty list. question_id: {}""".format(obj['question_id'])
+           and len(obj['entity_answers']) > 0, \
+        r"""'entity_answers' field must be a list, and has at least one element,
+        which can be a empty list. question_id: {}""".format(obj['question_id'])
 
 
 def read_file(file_name, task, is_ref=False):
@@ -94,6 +93,7 @@ def read_file(file_name, task, is_ref=False):
         - entity_answers: A list, each element is also a list containing the entities
                     tagged out from the corresponding answer string.
     """
+
     def _open(file_name, mode, zip_obj=None):
         if zip_obj is not None:
             return zip_obj.open(file_name, mode)
@@ -126,8 +126,8 @@ def compute_bleu_rouge(pred_dict, ref_dict, bleu_order=4):
     """
     Compute bleu and rouge scores.
     """
-    assert set(pred_dict.keys()) == set(ref_dict.keys()), \
-            "missing keys: {}".format(set(ref_dict.keys()) - set(pred_dict.keys()))
+    assert set(pred_dict.keys()) == set(ref_dict.keys()), "missing keys: {}".format(
+        set(ref_dict.keys()) - set(pred_dict.keys()))
     scores = {}
     bleu_scores, _ = Bleu(bleu_order).compute_score(ref_dict, pred_dict)
     for i, bleu_score in enumerate(bleu_scores):
@@ -175,7 +175,7 @@ def compute_prf(pred_dict, ref_dict):
         if best_ref_entity_list is None:
             if len(all_ref_entity_lists) > 0:
                 best_ref_entity_list = sorted(all_ref_entity_lists,
-                        key=lambda x: len(x))[0]
+                                              key=lambda x: len(x))[0]
             else:
                 best_ref_entity_list = []
         gold_entities = set(best_ref_entity_list)
@@ -230,13 +230,13 @@ def get_metrics(pred_result, ref_result, task, source):
     if task == 'main' or task == 'all' \
             or task == 'description':
         pred_dict, ref_dict = prepare_bleu(pred_result_filtered,
-                ref_result_filtered,
-                task)
+                                           ref_result_filtered,
+                                           task)
         metrics = compute_bleu_rouge(pred_dict, ref_dict)
     elif task == 'yesno':
         pred_dict, ref_dict = prepare_bleu(pred_result_filtered,
-                ref_result_filtered,
-                task)
+                                           ref_result_filtered,
+                                           task)
         keys = ['Yes', 'No', 'Depends']
         preds = [filter_dict(pred_dict, k) for k in keys]
         refs = [filter_dict(ref_dict, k) for k in keys]
@@ -250,10 +250,10 @@ def get_metrics(pred_result, ref_result, task, source):
 
     elif task == 'entity':
         pred_dict, ref_dict = prepare_prf(pred_result_filtered,
-                ref_result_filtered)
+                                          ref_result_filtered)
         pred_dict_bleu, ref_dict_bleu = prepare_bleu(pred_result_filtered,
-                ref_result_filtered,
-                task)
+                                                     ref_result_filtered,
+                                                     task)
         metrics = compute_prf(pred_dict, ref_dict)
         metrics.update(compute_bleu_rouge(pred_dict_bleu, ref_dict_bleu))
     else:
@@ -379,6 +379,7 @@ def get_yesno_result(qid, pred_result, ref_result):
         one contains reference result of the same question_id. Each list has
         elements of tuple (question_id, answers), 'answers' is a list of strings.
     """
+
     def _uniq(li, is_ref):
         uniq_li = []
         left = []
@@ -469,7 +470,7 @@ def format_metrics(metrics, task, err_msg):
                     "name": name,
                     "value": round(metrics[src].get(name, 0) * 100, 2),
                     "type": src,
-                    }
+                }
                 data.append(obj)
     elif task == 'yesno':
         metric_names = ["Bleu-4", "Rouge-L"]
@@ -480,7 +481,7 @@ def format_metrics(metrics, task, err_msg):
                 "name": name,
                 "value": round(metrics[src].get(name, 0) * 100, 2),
                 "type": 'All',
-                }
+            }
             data.append(obj)
             for d in details:
                 obj = {
@@ -488,7 +489,7 @@ def format_metrics(metrics, task, err_msg):
                     "value": \
                         round(metrics[src].get(d + '|' + name, 0) * 100, 2),
                     "type": d,
-                    }
+                }
                 data.append(obj)
     else:
         metric_names = ["Bleu-4", "Rouge-L"]
@@ -499,7 +500,7 @@ def format_metrics(metrics, task, err_msg):
                     "value": \
                         round(metrics[src].get(name, 0) * 100, 2),
                     "type": src,
-                    }
+                }
                 data.append(obj)
 
     result["data"] = data
@@ -523,15 +524,15 @@ def main(args):
             sources = sources[:1]
         for source in sources:
             metrics[source] = get_metrics(
-                    pred_result, ref_result, args.task, source)
+                pred_result, ref_result, args.task, source)
     except ValueError as ve:
         err = ve
     except AssertionError as ae:
         err = ae
 
     print(json.dumps(
-            format_metrics(metrics, args.task, err),
-            ensure_ascii=False).encode('utf8'))
+        format_metrics(metrics, args.task, err),
+        ensure_ascii=False).encode('utf8'))
 
 
 if __name__ == '__main__':
@@ -539,7 +540,7 @@ if __name__ == '__main__':
     parser.add_argument('pred_file', help='predict file')
     parser.add_argument('ref_file', help='reference file')
     parser.add_argument('task',
-            help='task name: Main|Yes_No|All|Entity|Description')
+                        help='task name: Main|Yes_No|All|Entity|Description')
 
     args = parser.parse_args()
     args.task = args.task.lower().replace('_', '')

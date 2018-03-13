@@ -30,8 +30,7 @@ import tensorflow as tf
 from utils import compute_bleu_rouge
 from utils import normalize
 from layers.basic_rnn import rnn
-from layers.match_layer import MatchLSTMLayer
-from layers.match_layer import AttentionFlowMatchLayer
+from layers.match_layer import MatchLSTMLayer, AttentionFlowMatchLayer
 from layers.pointer_net import PointerNetDecoder
 
 
@@ -275,6 +274,7 @@ class RCModel(object):
                 self.logger.info('Evaluating the model after epoch {}'.format(epoch))
                 if data.dev_set is not None:
                     eval_batches = data.gen_mini_batches('dev', batch_size, pad_id, shuffle=False)
+                    # 使用验证集评价模型
                     eval_loss, bleu_rouge = self.evaluate(eval_batches)
                     self.logger.info('Dev eval loss {}'.format(eval_loss))
                     self.logger.info('Dev eval result: {}'.format(bleu_rouge))
@@ -307,6 +307,7 @@ class RCModel(object):
                          self.start_label: batch['start_id'],
                          self.end_label: batch['end_id'],
                          self.dropout_keep_prob: 1.0}
+            # 得到输出
             start_probs, end_probs, loss = self.sess.run([self.start_probs,
                                                           self.end_probs, self.loss], feed_dict)
 
@@ -317,6 +318,8 @@ class RCModel(object):
             for sample, start_prob, end_prob in zip(batch['raw_data'], start_probs, end_probs):
 
                 best_answer = self.find_best_answer(sample, start_prob, end_prob, padded_p_len)
+                # 如果保存全部信息，则在样本中加入pred_answers，否则只保留部分信息，答案放入answers
+                # 预测答案
                 if save_full_info:
                     sample['pred_answers'] = [best_answer]
                     pred_answers.append(sample)
@@ -326,12 +329,13 @@ class RCModel(object):
                                          'answers': [best_answer],
                                          'entity_answers': [[]],
                                          'yesno_answers': []})
+                # 标准答案
                 if 'answers' in sample:
                     ref_answers.append({'question_id': sample['question_id'],
-                                         'question_type': sample['question_type'],
-                                         'answers': sample['answers'],
-                                         'entity_answers': [[]],
-                                         'yesno_answers': []})
+                                        'question_type': sample['question_type'],
+                                        'answers': sample['answers'],
+                                        'entity_answers': [[]],
+                                        'yesno_answers': []})
 
         if result_dir is not None and result_prefix is not None:
             result_file = os.path.join(result_dir, result_prefix + '.json')
@@ -345,10 +349,12 @@ class RCModel(object):
         ave_loss = 1.0 * total_loss / total_num
         # compute the bleu and rouge scores if reference answers is provided
         if len(ref_answers) > 0:
+            # K-V 问题ID-答案
             pred_dict, ref_dict = {}, {}
             for pred, ref in zip(pred_answers, ref_answers):
                 question_id = ref['question_id']
                 if len(ref['answers']) > 0:
+                    # 将answer tokens转换为由空格连接的一句话
                     pred_dict[question_id] = normalize(pred['answers'])
                     ref_dict[question_id] = normalize(ref['answers'])
             bleu_rouge = compute_bleu_rouge(pred_dict, ref_dict)
@@ -366,10 +372,12 @@ class RCModel(object):
             if p_idx >= self.max_p_num:
                 continue
             passage_len = min(self.max_p_len, len(passage['passage_tokens']))
+            # 为每个passage找到best answer
             answer_span, score = self.find_best_answer_for_passage(
                 start_prob[p_idx * padded_p_len: (p_idx + 1) * padded_p_len],
                 end_prob[p_idx * padded_p_len: (p_idx + 1) * padded_p_len],
                 passage_len)
+            # 各passage间最大score
             if score > best_score:
                 best_score = score
                 best_p_idx = p_idx
@@ -390,6 +398,7 @@ class RCModel(object):
         else:
             passage_len = min(len(start_probs), passage_len)
         best_start, best_end, max_prob = -1, -1, 0
+        # 从头扫描passage
         for start_idx in range(passage_len):
             for ans_len in range(self.max_a_len):
                 end_idx = start_idx + ans_len

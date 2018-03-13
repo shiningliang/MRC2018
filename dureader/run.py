@@ -19,10 +19,12 @@ This module prepares and runs the whole system.
 """
 
 import sys
+
 # reload(sys)
 # sys.setdefaultencoding('utf8')
 sys.path.append('..')
 import os
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import pickle
 import argparse
@@ -248,6 +250,7 @@ def run():
         evaluate(args)
     if args.predict:
         predict(args)
+
 
 if __name__ == '__main__':
     run()
