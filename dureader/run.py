@@ -20,8 +20,6 @@ This module prepares and runs the whole system.
 
 import sys
 
-# reload(sys)
-# sys.setdefaultencoding('utf8')
 sys.path.append('..')
 import os
 
@@ -29,6 +27,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import pickle
 import argparse
 import logging
+import tensorflow as tf
 from dataset import BRCDataset
 from vocab import Vocab
 from rc_model import RCModel
@@ -82,13 +81,13 @@ def parse_args():
 
     path_settings = parser.add_argument_group('path settings')
     path_settings.add_argument('--train_files', nargs='+',
-                               default=['../data/demo/trainset/search.train.json'],
+                               default=['../data/trainset/search.train.json'],
                                help='list of files that contain the preprocessed train data')
     path_settings.add_argument('--dev_files', nargs='+',
-                               default=['../data/demo/devset/search.dev.json'],
+                               default=['../data/devset/search.dev.json'],
                                help='list of files that contain the preprocessed dev data')
     path_settings.add_argument('--test_files', nargs='+',
-                               default=['../data/demo/testset/search.test.json'],
+                               default=['../data/testset/search.test.json'],
                                help='list of files that contain the preprocessed test data')
     path_settings.add_argument('--brc_dir', default='../data/baidu',
                                help='the dir with preprocessed baidu reading comprehension data')
@@ -122,7 +121,7 @@ def prepare(args):
     logger.info('Building vocabulary...')
     # 载入数据
     brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
-                          args.train_files, args.dev_files, args.test_files)
+                          args.train_files, args.dev_files, args.test_files, prepare=True)
     # 构建词典
     vocab = Vocab(lower=True)
     for word in brc_data.word_iter('train'):
@@ -140,6 +139,18 @@ def prepare(args):
     logger.info('Saving vocab...')
     with open(os.path.join(args.vocab_dir, 'vocab.data'), 'wb') as fout:
         pickle.dump(vocab, fout)
+    fout.close()
+
+    logger.info('Saving sets...')
+    with open('../data/prepared/train_set.data', 'wb') as f_train_out:
+        pickle.dump(brc_data.train_set, f_train_out)
+    f_train_out.close()
+    with open('../data/prepared/dev_set.data', 'wb') as f_dev_out:
+        pickle.dump(brc_data.dev_set, f_dev_out)
+    f_dev_out.close()
+    with open('../data/prepared/test_set.data', 'wb') as f_test_out:
+        pickle.dump(brc_data.test_set, f_test_out)
+    f_test_out.close()
 
     logger.info('Done with preparing!')
 
@@ -152,6 +163,7 @@ def train(args):
     logger.info('Load data_set and vocab...')
     with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
         vocab = pickle.load(fin)
+    fin.close()
     brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
                           args.train_files, args.dev_files)
     logger.info('Converting text into ids...')
@@ -159,13 +171,14 @@ def train(args):
     logger.info('Initialize the model...')
     rc_model = RCModel(vocab, args)
     logger.info('Training the model...')
-    rc_model.train(brc_data, args.epochs, args.batch_size, save_dir=args.model_dir,
-                   save_prefix=args.algo,
-                   dropout_keep_prob=args.dropout_keep_prob)
+    model_saver = rc_model.train(brc_data, args.epochs, args.batch_size, save_dir=args.model_dir,
+                                 save_prefix=args.algo,
+                                 dropout_keep_prob=args.dropout_keep_prob)
     logger.info('Done with model training!')
+    return model_saver
 
 
-def evaluate(args):
+def evaluate(args, model_saver):
     """
     evaluate the trained model on dev files
     """
@@ -173,12 +186,14 @@ def evaluate(args):
     logger.info('Load data_set and vocab...')
     with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
         vocab = pickle.load(fin)
+    fin.close()
     assert len(args.dev_files) > 0, 'No dev files are provided.'
-    brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len, dev_files=args.dev_files)
+    brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
+                          dev_files=args.dev_files)
     logger.info('Converting text into ids...')
     brc_data.convert_to_ids(vocab)
     logger.info('Restoring the model...')
-    rc_model = RCModel(vocab, args)
+    rc_model = RCModel(vocab, args, model_saver)
     rc_model.restore(model_dir=args.model_dir, model_prefix=args.algo)
     logger.info('Evaluating the model on dev set...')
     dev_batches = brc_data.gen_mini_batches('dev', args.batch_size,
@@ -190,7 +205,7 @@ def evaluate(args):
     logger.info('Predicted answers are saved to {}'.format(os.path.join(args.result_dir)))
 
 
-def predict(args):
+def predict(args, model_saver):
     """
     predicts answers for test files
     """
@@ -198,13 +213,14 @@ def predict(args):
     logger.info('Load data_set and vocab...')
     with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
         vocab = pickle.load(fin)
+    fin.close()
     assert len(args.test_files) > 0, 'No test files are provided.'
     brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
                           test_files=args.test_files)
     logger.info('Converting text into ids...')
     brc_data.convert_to_ids(vocab)
     logger.info('Restoring the model...')
-    rc_model = RCModel(vocab, args)
+    rc_model = RCModel(vocab, args, model_saver)
     rc_model.restore(model_dir=args.model_dir, model_prefix=args.algo)
     logger.info('Predicting answers for test set...')
     test_batches = brc_data.gen_mini_batches('test', args.batch_size,
@@ -240,16 +256,17 @@ def run():
 
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    model_saver = None
 
     # 解析各阶段参数，不为空则转到
     if args.prepare:
         prepare(args)
     if args.train:
-        train(args)
+        model_saver = train(args)
     if args.evaluate:
-        evaluate(args)
+        evaluate(args, model_saver)
     if args.predict:
-        predict(args)
+        predict(args, model_saver)
 
 
 if __name__ == '__main__':

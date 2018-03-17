@@ -61,7 +61,7 @@ class MatchLSTMLayer(object):
         """
         Match the passage_encodes with question_encodes using Match-LSTM algorithm
         """
-        with tf.variable_scope('match_lstm'):
+        with tf.variable_scope('match_lstm', reuse=tf.AUTO_REUSE):
             cell_fw = MatchLSTMAttnCell(self.hidden_size, question_encodes)
             cell_bw = MatchLSTMAttnCell(self.hidden_size, question_encodes)
             outputs, state = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw,
@@ -88,7 +88,7 @@ class AttentionFlowMatchLayer(object):
         """
         Match the passage_encodes with question_encodes using Attention Flow Match algorithm
         """
-        with tf.variable_scope('bidaf'):
+        with tf.variable_scope('bidaf', reuse=tf.AUTO_REUSE):
             sim_matrix = tf.matmul(passage_encodes, question_encodes, transpose_b=True)
             context2question_attn = tf.matmul(tf.nn.softmax(sim_matrix, -1), question_encodes)
             b = tf.nn.softmax(tf.expand_dims(tf.reduce_max(sim_matrix, 2), 1), -1)

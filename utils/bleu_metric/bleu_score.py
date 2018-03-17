@@ -17,7 +17,8 @@ cook_test(test, refs, n=4): Transform a test sentence as a string (together with
 '''
 
 import copy
-import sys, math, re
+# import sys, math, re
+import math
 from collections import defaultdict
 
 

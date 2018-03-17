@@ -19,7 +19,7 @@ This module computes evaluation metrics for DuReader dataset.
 """
 
 import argparse
-import json
+import simplejson as json
 import sys
 import zipfile
 

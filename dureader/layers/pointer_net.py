@@ -94,7 +94,7 @@ def attend_pooling(pooling_vectors, ref_vector, hidden_size, scope=None):
     Returns:
         the pooled vector
     """
-    with tf.variable_scope(scope or 'attend_pooling'):
+    with tf.variable_scope(scope or 'attend_pooling', reuse=tf.AUTO_REUSE):
         U = tf.tanh(tc.layers.fully_connected(pooling_vectors, num_outputs=hidden_size,
                                               activation_fn=None, biases_initializer=None)
                     + tc.layers.fully_connected(tf.expand_dims(ref_vector, 1),
@@ -110,6 +110,7 @@ class PointerNetLSTMCell(tc.rnn.LSTMCell):
     """
     Implements the Pointer Network Cell
     """
+
     def __init__(self, num_units, context_to_point):
         super(PointerNetLSTMCell, self).__init__(num_units, state_is_tuple=True)
         self.context_to_point = context_to_point
@@ -119,7 +120,7 @@ class PointerNetLSTMCell(tc.rnn.LSTMCell):
 
     def __call__(self, inputs, state, scope=None):
         (c_prev, m_prev) = state
-        with tf.variable_scope(scope or type(self).__name__):
+        with tf.variable_scope(scope or type(self).__name__, reuse=tf.AUTO_REUSE):
             U = tf.tanh(self.fc_context
                         + tf.expand_dims(tc.layers.fully_connected(m_prev,
                                                                    num_outputs=self._num_units,
@@ -136,6 +137,7 @@ class PointerNetDecoder(object):
     """
     Implements the Pointer Network
     """
+
     def __init__(self, hidden_size):
         self.hidden_size = hidden_size
 
@@ -151,7 +153,7 @@ class PointerNetDecoder(object):
         Returns:
             the probs of evary position to be start and end of the answer
         """
-        with tf.variable_scope('pn_decoder'):
+        with tf.variable_scope('pn_decoder', reuse=tf.AUTO_REUSE):
             fake_inputs = tf.zeros([tf.shape(passage_vectors)[0], 2, 1])  # not used
             sequence_len = tf.tile([2], [tf.shape(passage_vectors)[0]])
             if init_with_question:
@@ -164,15 +166,12 @@ class PointerNetDecoder(object):
                 init_state = tc.rnn.LSTMStateTuple(pooled_question_rep, pooled_question_rep)
             else:
                 init_state = None
-            with tf.variable_scope('fw'):
+            with tf.variable_scope('fw', reuse=tf.AUTO_REUSE):
                 fw_cell = PointerNetLSTMCell(self.hidden_size, passage_vectors)
                 fw_outputs, _ = custom_dynamic_rnn(fw_cell, fake_inputs, sequence_len, init_state)
-            with tf.variable_scope('bw'):
+            with tf.variable_scope('bw', reuse=tf.AUTO_REUSE):
                 bw_cell = PointerNetLSTMCell(self.hidden_size, passage_vectors)
                 bw_outputs, _ = custom_dynamic_rnn(bw_cell, fake_inputs, sequence_len, init_state)
             start_prob = (fw_outputs[0:, 0, 0:] + bw_outputs[0:, 1, 0:]) / 2
             end_prob = (fw_outputs[0:, 1, 0:] + bw_outputs[0:, 0, 0:]) / 2
             return start_prob, end_prob
-
-
-

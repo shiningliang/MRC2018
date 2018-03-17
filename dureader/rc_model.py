@@ -24,7 +24,7 @@ Note that we use Pointer Network for the decoding stage of both models.
 import os
 import time
 import logging
-import json
+import simplejson as json
 import numpy as np
 import tensorflow as tf
 from utils import compute_bleu_rouge
@@ -39,7 +39,7 @@ class RCModel(object):
     Implements the main reading comprehension model.
     """
 
-    def __init__(self, vocab, args):
+    def __init__(self, vocab, args, model_saver=None):
 
         # logging
         self.logger = logging.getLogger("brc")
@@ -66,10 +66,14 @@ class RCModel(object):
         sess_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=sess_config)
 
+        # if train:
         self._build_graph()
 
-        # save info
-        self.saver = tf.train.Saver()
+        if not model_saver:
+            # save info
+            self.saver = tf.train.Saver()
+        else:
+            self.saver = model_saver
 
         # initialize the model
         self.sess.run(tf.global_variables_initializer())
@@ -115,12 +119,12 @@ class RCModel(object):
         """
         The embedding layer, question and passage share embeddings
         """
-        with tf.device('/cpu:0'), tf.variable_scope('word_embedding'):
+        with tf.device('/cpu:0'), tf.variable_scope('word_embedding', reuse=tf.AUTO_REUSE):
             self.word_embeddings = tf.get_variable(
                 'word_embeddings',
                 shape=(self.vocab.size(), self.vocab.embed_dim),
                 initializer=tf.constant_initializer(self.vocab.embeddings),
-                trainable=True
+                trainable=True,
             )
             self.p_emb = tf.nn.embedding_lookup(self.word_embeddings, self.p)
             self.q_emb = tf.nn.embedding_lookup(self.word_embeddings, self.q)
@@ -129,9 +133,9 @@ class RCModel(object):
         """
         Employs two Bi-LSTMs to encode passage and question separately
         """
-        with tf.variable_scope('passage_encoding'):
+        with tf.variable_scope('passage_encoding', reuse=tf.AUTO_REUSE):
             self.sep_p_encodes, _ = rnn('bi-lstm', self.p_emb, self.p_length, self.hidden_size)
-        with tf.variable_scope('question_encoding'):
+        with tf.variable_scope('question_encoding', reuse=tf.AUTO_REUSE):
             self.sep_q_encodes, _ = rnn('bi-lstm', self.q_emb, self.q_length, self.hidden_size)
         if self.use_dropout:
             self.sep_p_encodes = tf.nn.dropout(self.sep_p_encodes, self.dropout_keep_prob)
@@ -142,13 +146,13 @@ class RCModel(object):
         The core of RC model, get the question-aware passage encoding with either BIDAF or MLSTM
         """
         if self.algo == 'MLSTM':
-            match_layer = MatchLSTMLayer(self.hidden_size)
+            self.match_layer = MatchLSTMLayer(self.hidden_size)
         elif self.algo == 'BIDAF':
-            match_layer = AttentionFlowMatchLayer(self.hidden_size)
+            self.match_layer = AttentionFlowMatchLayer(self.hidden_size)
         else:
             raise NotImplementedError('The algorithm {} is not implemented.'.format(self.algo))
-        self.match_p_encodes, _ = match_layer.match(self.sep_p_encodes, self.sep_q_encodes,
-                                                    self.p_length, self.q_length)
+        self.match_p_encodes, _ = self.match_layer.match(self.sep_p_encodes, self.sep_q_encodes,
+                                                         self.p_length, self.q_length)
         if self.use_dropout:
             self.match_p_encodes = tf.nn.dropout(self.match_p_encodes, self.dropout_keep_prob)
 
@@ -156,7 +160,7 @@ class RCModel(object):
         """
         Employs Bi-LSTM again to fuse the context information after match layer
         """
-        with tf.variable_scope('fusion'):
+        with tf.variable_scope('fusion', reuse=tf.AUTO_REUSE):
             self.fuse_p_encodes, _ = rnn('bi-lstm', self.match_p_encodes, self.p_length,
                                          self.hidden_size, layer_num=1)
             if self.use_dropout:
@@ -169,7 +173,7 @@ class RCModel(object):
         Note that we concat the fuse_p_encodes for the passages in the same document.
         And since the encodes of queries in the same document is same, we select the first one.
         """
-        with tf.variable_scope('same_question_concat'):
+        with tf.variable_scope('same_question_concat', reuse=tf.AUTO_REUSE):
             batch_size = tf.shape(self.start_label)[0]
             concat_passage_encodes = tf.reshape(
                 self.fuse_p_encodes,
@@ -179,9 +183,9 @@ class RCModel(object):
                 self.sep_q_encodes,
                 [batch_size, -1, tf.shape(self.sep_q_encodes)[1], 2 * self.hidden_size]
             )[0:, 0, 0:, 0:]
-        decoder = PointerNetDecoder(self.hidden_size)
-        self.start_probs, self.end_probs = decoder.decode(concat_passage_encodes,
-                                                          no_dup_question_encodes)
+        self.decoder = PointerNetDecoder(self.hidden_size)
+        self.start_probs, self.end_probs = self.decoder.decode(concat_passage_encodes,
+                                                               no_dup_question_encodes)
 
     def _compute_loss(self):
         """
@@ -210,17 +214,18 @@ class RCModel(object):
         """
         Selects the training algorithm and creates a train operation with it
         """
-        if self.optim_type == 'adagrad':
-            self.optimizer = tf.train.AdagradOptimizer(self.learning_rate)
-        elif self.optim_type == 'adam':
-            self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
-        elif self.optim_type == 'rprop':
-            self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
-        elif self.optim_type == 'sgd':
-            self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
-        else:
-            raise NotImplementedError('Unsupported optimizer: {}'.format(self.optim_type))
-        self.train_op = self.optimizer.minimize(self.loss)
+        with tf.variable_scope('optimizer', reuse=tf.AUTO_REUSE):
+            if self.optim_type == 'adagrad':
+                self.optimizer = tf.train.AdagradOptimizer(self.learning_rate)
+            elif self.optim_type == 'adam':
+                self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+            elif self.optim_type == 'rprop':
+                self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
+            elif self.optim_type == 'sgd':
+                self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
+            else:
+                raise NotImplementedError('Unsupported optimizer: {}'.format(self.optim_type))
+            self.train_op = self.optimizer.minimize(self.loss)
 
     def _train_epoch(self, train_batches, dropout_keep_prob):
         """
@@ -286,6 +291,7 @@ class RCModel(object):
                     self.logger.warning('No dev set is loaded for evaluation in the dataset!')
             else:
                 self.save(save_dir, save_prefix + '_' + str(epoch))
+        return self.saver
 
     def evaluate(self, eval_batches, result_dir=None, result_prefix=None, save_full_info=False):
         """
@@ -422,5 +428,7 @@ class RCModel(object):
         """
         Restores the model into model_dir from model_prefix as the model indicator
         """
-        self.saver.restore(self.sess, os.path.join(model_dir, model_prefix))
+        file_path = os.path.join(model_dir, model_prefix)
+        # self.saver = tf.train.import_meta_graph(file_path + '.meta')
+        self.saver.restore(self.sess, file_path)
         self.logger.info('Model restored from {}, with prefix {}'.format(model_dir, model_prefix))

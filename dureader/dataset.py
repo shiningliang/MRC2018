@@ -18,10 +18,10 @@
 This module implements data process strategies.
 """
 
-import os
-import json
+import simplejson as json
 import logging
 import numpy as np
+import pickle as pkl
 from collections import Counter
 
 
@@ -29,8 +29,9 @@ class BRCDataset(object):
     """
     This module implements the APIs for loading and using baidu reading comprehension dataset
     """
+
     def __init__(self, max_p_num, max_p_len, max_q_len,
-                 train_files=[], dev_files=[], test_files=[]):
+                 train_files=[], dev_files=[], test_files=[], prepare=False):
         self.logger = logging.getLogger("brc")
         self.max_p_num = max_p_num
         self.max_p_len = max_p_len
@@ -38,19 +39,34 @@ class BRCDataset(object):
 
         self.train_set, self.dev_set, self.test_set = [], [], []
         if train_files:
-            for train_file in train_files:
-                self.train_set += self._load_dataset(train_file, train=True)
-            self.logger.info('Train set size: {} questions.'.format(len(self.train_set)))
+            if prepare:
+                for train_file in train_files:
+                    self.train_set += self._load_dataset(train_file, train=True)
+                self.logger.info('Train set size: {} questions.'.format(len(self.train_set)))
+            else:
+                with open('../data/prepared/train_set.data', 'rb') as f_train_in:
+                    self.train_set = pkl.load(f_train_in)
+                f_train_in.close()
 
         if dev_files:
-            for dev_file in dev_files:
-                self.dev_set += self._load_dataset(dev_file)
-            self.logger.info('Dev set size: {} questions.'.format(len(self.dev_set)))
+            if prepare:
+                for dev_file in dev_files:
+                    self.dev_set += self._load_dataset(dev_file)
+                self.logger.info('Dev set size: {} questions.'.format(len(self.dev_set)))
+            else:
+                with open('../data/prepared/dev_set.data', 'rb') as f_dev_in:
+                    self.dev_set = pkl.load(f_dev_in)
+                f_dev_in.close()
 
         if test_files:
-            for test_file in test_files:
-                self.test_set += self._load_dataset(test_file)
-            self.logger.info('Test set size: {} questions.'.format(len(self.test_set)))
+            if prepare:
+                for test_file in test_files:
+                    self.test_set += self._load_dataset(test_file)
+                self.logger.info('Test set size: {} questions.'.format(len(self.test_set)))
+            else:
+                with open('../data/prepared/test_set.data', 'rb') as f_test_in:
+                    self.test_set = pkl.load(f_test_in)
+                f_test_in.close()
 
     def _load_dataset(self, data_path, train=False):
         """
@@ -59,51 +75,61 @@ class BRCDataset(object):
             data_path: the data file to load
 
         """
-        with open(data_path) as fin:
-            data_set = []
-            for lidx, line in enumerate(fin):
-                # 每次加载一个json文件-sample
-                sample = json.loads(line.strip())
+        # with open(data_path) as fin:
+        fin = open(data_path, encoding='utf8')
+        data_set = []
+        for lidx, line in enumerate(fin):
+            # 每次加载一个json文件-sample
+            sample = json.loads(line.strip())
+            del sample['question']
+            if train:
+                # 如果answer spans为空，或answer spans末尾超过了文档长度限制，则跳过
+                if len(sample['answer_spans']) == 0:
+                    continue
+                if sample['answer_spans'][0][1] >= self.max_p_len:
+                    continue
+
+            if 'answer_docs' in sample:
+                sample['answer_passages'] = sample['answer_docs']
+                del sample['answer_docs']
+                del sample['fake_answers']
+                del sample['segmented_answers']
+
+            sample['question_tokens'] = sample['segmented_question']
+
+            sample['passages'] = []
+            for d_idx, doc in enumerate(sample['documents']):
+                del doc['title']
+                del doc['segmented_title']
+                del doc['paragraphs']
                 if train:
-                    # 如果answer spans为空，或answer spans末尾超过了文档长度限制，则跳过
-                    if len(sample['answer_spans']) == 0:
-                        continue
-                    if sample['answer_spans'][0][1] >= self.max_p_len:
-                        continue
-
-                if 'answer_docs' in sample:
-                    sample['answer_passages'] = sample['answer_docs']
-
-                sample['question_tokens'] = sample['segmented_question']
-
-                sample['passages'] = []
-                for d_idx, doc in enumerate(sample['documents']):
-                    if train:
-                        # 在训练时，passages 存储每篇文档最相关段落，以及其是否在作答时被采纳
-                        most_related_para = doc['most_related_para']
-                        sample['passages'].append(
-                            {'passage_tokens': doc['segmented_paragraphs'][most_related_para],
-                             'is_selected': doc['is_selected']}
-                        )
-                    else:
-                        para_infos = []
-                        for para_tokens in doc['segmented_paragraphs']:
-                            # para_tokens 每篇文档分词后的段落，question_tokens 问题分词
-                            question_tokens = sample['segmented_question']
-                            common_with_question = Counter(para_tokens) & Counter(question_tokens)
-                            correct_preds = sum(common_with_question.values())
-                            if correct_preds == 0:
-                                recall_wrt_question = 0
-                            else:
-                                recall_wrt_question = float(correct_preds) / len(question_tokens)
-                            para_infos.append((para_tokens, recall_wrt_question, len(para_tokens)))
-                        # 排序 选出与question相比recall最高的para_tokens
-                        para_infos.sort(key=lambda x: (-x[1], x[2]))
-                        fake_passage_tokens = []
-                        for para_info in para_infos[:1]:
-                            fake_passage_tokens += para_info[0]
-                        sample['passages'].append({'passage_tokens': fake_passage_tokens})
-                data_set.append(sample)
+                    # 在训练时，passages 存储每篇文档最相关段落，以及其是否在作答时被采纳
+                    most_related_para = doc['most_related_para']
+                    sample['passages'].append(
+                        {'passage_tokens': doc['segmented_paragraphs'][most_related_para],
+                         'is_selected': doc['is_selected']}
+                    )
+                else:
+                    para_infos = []
+                    for para_tokens in doc['segmented_paragraphs']:
+                        # para_tokens 每篇文档分词后的段落，question_tokens 问题分词
+                        question_tokens = sample['segmented_question']
+                        common_with_question = Counter(para_tokens) & Counter(question_tokens)
+                        correct_preds = sum(common_with_question.values())
+                        if correct_preds == 0:
+                            recall_wrt_question = 0
+                        else:
+                            recall_wrt_question = float(correct_preds) / len(question_tokens)
+                        para_infos.append((para_tokens, recall_wrt_question, len(para_tokens)))
+                    # 排序 选出与question匹配recall最高的para_tokens
+                    para_infos.sort(key=lambda x: (-x[1], x[2]))
+                    fake_passage_tokens = []
+                    for para_info in para_infos[:1]:
+                        fake_passage_tokens += para_info[0]
+                    sample['passages'].append({'passage_tokens': fake_passage_tokens})
+            del sample['documents']
+            data_set.append(sample)
+        fin.close()
         return data_set
 
     def _one_mini_batch(self, data, indices, pad_id):
