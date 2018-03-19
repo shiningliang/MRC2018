@@ -81,14 +81,16 @@ def parse_args():
 
     path_settings = parser.add_argument_group('path settings')
     path_settings.add_argument('--train_files', nargs='+',
-                               default=['../data/trainset/search.train.json'],
+                               default=['../data/demo/trainset/search.train.json'],
                                help='list of files that contain the preprocessed train data')
     path_settings.add_argument('--dev_files', nargs='+',
-                               default=['../data/devset/search.dev.json'],
+                               default=['../data/demo/devset/search.dev.json'],
                                help='list of files that contain the preprocessed dev data')
     path_settings.add_argument('--test_files', nargs='+',
-                               default=['../data/testset/search.test.json'],
+                               default=['../data/demo/testset/search.test.json'],
                                help='list of files that contain the preprocessed test data')
+    path_settings.add_argument('--w2v_file', default='../dureader/w2v_dic.data',
+                               help='pretrained embedding data')
     path_settings.add_argument('--brc_dir', default='../data/baidu',
                                help='the dir with preprocessed baidu reading comprehension data')
     path_settings.add_argument('--vocab_dir', default='../data/vocab/',
@@ -129,12 +131,14 @@ def prepare(args):
 
     unfiltered_vocab_size = vocab.size()
     # 保留至少出现2次的token
-    vocab.filter_tokens_by_cnt(min_cnt=2)
-    filtered_num = unfiltered_vocab_size - vocab.size()
-    logger.info('After filter {} tokens, the final vocab size is {}'.format(filtered_num, vocab.size()))
+    # vocab.filter_tokens_by_cnt(min_cnt=2)
 
     logger.info('Assigning embeddings...')
-    vocab.randomly_init_embeddings(args.embed_size)
+    # 需要载入预训练词向量
+    # vocab.randomly_init_embeddings(args.embed_size)
+    vocab.load_pretrained_embeddings(args.w2v_file)
+    filtered_num = unfiltered_vocab_size - vocab.size()
+    logger.info('After filter {} tokens, the final vocab size is {}'.format(filtered_num, vocab.size()))
 
     logger.info('Saving vocab...')
     with open(os.path.join(args.vocab_dir, 'vocab.data'), 'wb') as fout:
