@@ -1,35 +1,42 @@
-import simplejson as json
 import sys
+import os
+import logging
+# import argparse
 from gensim.models import word2vec
-
-sys.path.append('..')
-
-
-def load_data(data_file):
-    fin = open(data_file, encoding='utf8')
-    data_set = []
-    for lidx, line in enumerate(fin):
-        # 每次加载一个json文件-sample
-        sample = json.loads(line.strip())
-        data_set.append(sample['segmented_question'])
-        for d_idx, doc in enumerate(sample['documents']):
-            data_set += doc['segmented_paragraphs']
-        del sample
-    fin.close()
-    return data_set
+import json_to_sentence
 
 
-corpus = []
-file_path = ['../data/demo/trainset/search.train.json', '../data/demo/devset/search.dev.json',
-             '../data/demo/testset/search.test.json']
-for file in file_path:
-    corpus += load_data(file)
+def pre_train(brc_data, segmented_dir):
+    # parser = argparse.ArgumentParser('Reading Comprehension on BaiduRC dataset')
+    # path_settings = parser.add_argument_group('path settings')
+    # path_settings.add_argument('--train_files', nargs='+',
+    #                            default=['../data/trainset/search.train.json'],
+    #                            help='list of files that contain the preprocessed train data')
+    # path_settings.add_argument('--dev_files', nargs='+',
+    #                            default=['../data/devset/search.dev.json'],
+    #                            help='list of files that contain the preprocessed dev data')
+    # path_settings.add_argument('--test_files', nargs='+',
+    #                            default=['../data/testset/search.test.json'],
+    #                            help='list of files that contain the preprocessed test data')
+    # path_settings.add_argument('--segmented_dir', default='../data/segmented',
+    #                            help='the dir to store segmented sentences')
 
-model = word2vec.Word2Vec(corpus, size=300, min_count=2, workers=8)
-with open('w2v_dic.data', 'w', encoding='utf-8') as f:
-    for word in model.wv.vocab:
-        f.write(word + ' ')
-        for num in list(map(str, model[word])):
-            f.write(num + ' ')
-        f.write('\n')
-f.close()
+    sys.path.append('..')
+    # args = parser.parse_args()
+    # for files in args.train_files + args.dev_files + args.test_files:
+    #     json_to_sentence.load_data(files, args.segmented_dir)
+    json_to_sentence.load_data(brc_data, segmented_dir)
+
+    program = os.path.basename(sys.argv[0])
+    logger = logging.getLogger(program)
+    logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
+    logging.root.setLevel(level=logging.INFO)
+    logger.info("running %s" % ' '.join(sys.argv))
+
+    model = word2vec.Word2Vec(word2vec.PathLineSentences(segmented_dir), size=300, min_count=2, workers=8)
+    with open(os.path.join(segmented_dir, 'w2v_dic.data'), 'w', encoding='utf-8') as f:
+        for word in model.wv.vocab:
+            f.write(word + ' ')
+            f.write(' '.join(list(map(str, model[word]))))
+            f.write('\n')
+    f.close()

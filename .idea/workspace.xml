@@ -2,11 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3c5f81fd-0028-4f30-abcb-dffa2d1caab5" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/data/download.sh" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/data/md5sum.txt" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/dureader/dataset.py" afterPath="$PROJECT_DIR$/dureader/dataset.py" />
+      <change beforePath="$PROJECT_DIR$/dureader/pretrain_embedding.py" afterPath="$PROJECT_DIR$/dureader/pretrain_embedding.py" />
       <change beforePath="$PROJECT_DIR$/dureader/run.py" afterPath="$PROJECT_DIR$/dureader/run.py" />
-      <change beforePath="$PROJECT_DIR$/dureader/vocab.py" afterPath="$PROJECT_DIR$/dureader/vocab.py" />
     </list>
     <ignored path="$PROJECT_DIR$/.idea/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -28,8 +26,8 @@
       <file leaf-file-name="run.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/dureader/run.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="104">
-              <caret line="133" column="43" lean-forward="true" selection-start-line="133" selection-start-column="43" selection-end-line="133" selection-end-column="43" />
+            <state relative-caret-position="5753">
+              <caret line="282" column="0" lean-forward="true" selection-start-line="282" selection-start-column="0" selection-end-line="282" selection-end-column="0" />
               <folding>
                 <element signature="n#!!doc" expanded="false" />
               </folding>
@@ -40,8 +38,8 @@
       <file leaf-file-name="dataset.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dureader/dataset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2519">
-              <caret line="103" column="37" lean-forward="false" selection-start-line="103" selection-start-column="37" selection-end-line="103" selection-end-column="37" />
+            <state relative-caret-position="-550">
+              <caret line="72" column="25" lean-forward="true" selection-start-line="72" selection-start-column="25" selection-end-line="72" selection-end-column="25" />
               <folding>
                 <element signature="n#!!doc" expanded="false" />
               </folding>
@@ -52,10 +50,20 @@
       <file leaf-file-name="pretrain_embedding.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dureader/pretrain_embedding.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="176">
-              <caret line="8" column="42" lean-forward="false" selection-start-line="8" selection-start-column="42" selection-end-line="8" selection-end-column="42" />
+            <state relative-caret-position="88">
+              <caret line="4" column="32" lean-forward="false" selection-start-line="4" selection-start-column="32" selection-end-line="4" selection-end-column="32" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="json_to_sentence.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dureader/json_to_sentence.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="748">
+              <caret line="34" column="0" lean-forward="true" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
               <folding>
-                <element signature="e#0#25#0" expanded="true" />
+                <element signature="e#0#10#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -165,7 +173,6 @@
         <option value="$PROJECT_DIR$/dureader/layers/basic_rnn.py" />
         <option value="$PROJECT_DIR$/dureader/layers/match_layer.py" />
         <option value="$PROJECT_DIR$/dureader/layers/pointer_net.py" />
-        <option value="$PROJECT_DIR$/dureader/dataset.py" />
         <option value="$PROJECT_DIR$/utils/bleu_metric/__init__.py" />
         <option value="$PROJECT_DIR$/utils/bleu_metric/bleu_score.py" />
         <option value="$PROJECT_DIR$/utils/bleu_metric/bleu.py" />
@@ -173,9 +180,11 @@
         <option value="$PROJECT_DIR$/dureader/rc_model.py" />
         <option value="$PROJECT_DIR$/utils/dureader_eval.py" />
         <option value="$PROJECT_DIR$/utils/pretrain_embedding.py" />
-        <option value="$PROJECT_DIR$/dureader/pretrain_embedding.py" />
-        <option value="$PROJECT_DIR$/dureader/run.py" />
         <option value="$PROJECT_DIR$/dureader/vocab.py" />
+        <option value="$PROJECT_DIR$/dureader/run.py" />
+        <option value="$PROJECT_DIR$/dureader/dataset.py" />
+        <option value="$PROJECT_DIR$/dureader/pretrain_embedding.py" />
+        <option value="$PROJECT_DIR$/dureader/json_to_sentence.py" />
       </list>
     </option>
   </component>
@@ -185,11 +194,11 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
-    <option name="x" value="-8" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-73" />
     <option name="y" value="-8" />
-    <option name="width" value="1936" />
-    <option name="height" value="1056" />
+    <option name="width" value="1920" />
+    <option name="height" value="1040" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="1" id="Add" />
@@ -391,8 +400,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
-    <editor active="true" />
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39825898" sideWeight="0.50213677" order="7" side_tool="true" content_ui="tabs" />
@@ -440,13 +448,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/utils/get_vocab.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1122">
-          <caret line="55" column="63" lean-forward="true" selection-start-line="55" selection-start-column="63" selection-end-line="55" selection-end-column="63" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/utils/preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="506">
@@ -694,14 +695,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Software/Anaconda3/Lib/site-packages/gensim/models/word2vec.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="1133" column="8" lean-forward="false" selection-start-line="1133" selection-start-column="8" selection-end-line="1133" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/Software/Anaconda3/Lib/site-packages/gensim/utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="189">
@@ -768,16 +761,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dureader/dataset.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2519">
-          <caret line="103" column="37" lean-forward="false" selection-start-line="103" selection-start-column="37" selection-end-line="103" selection-end-column="37" />
-          <folding>
-            <element signature="n#!!doc" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/dureader/vocab.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="170">
@@ -788,20 +771,46 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/Software/Anaconda3/Lib/site-packages/gensim/models/word2vec.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1485">
+          <caret line="427" column="93" lean-forward="false" selection-start-line="427" selection-start-column="81" selection-end-line="427" selection-end-column="93" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dureader/json_to_sentence.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="748">
+          <caret line="34" column="0" lean-forward="true" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/dureader/pretrain_embedding.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="176">
-          <caret line="8" column="42" lean-forward="false" selection-start-line="8" selection-start-column="42" selection-end-line="8" selection-end-column="42" />
+        <state relative-caret-position="88">
+          <caret line="4" column="32" lean-forward="false" selection-start-line="4" selection-start-column="32" selection-end-line="4" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dureader/dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-550">
+          <caret line="72" column="25" lean-forward="true" selection-start-line="72" selection-start-column="25" selection-end-line="72" selection-end-column="25" />
           <folding>
-            <element signature="e#0#25#0" expanded="true" />
+            <element signature="n#!!doc" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/dureader/run.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="104">
-          <caret line="133" column="43" lean-forward="true" selection-start-line="133" selection-start-column="43" selection-end-line="133" selection-end-column="43" />
+        <state relative-caret-position="5753">
+          <caret line="282" column="0" lean-forward="true" selection-start-line="282" selection-start-column="0" selection-end-line="282" selection-end-column="0" />
           <folding>
             <element signature="n#!!doc" expanded="false" />
           </folding>

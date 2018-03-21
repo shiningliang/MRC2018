@@ -44,7 +44,7 @@ class BRCDataset(object):
                     self.train_set += self._load_dataset(train_file, train=True)
                 self.logger.info('Train set size: {} questions.'.format(len(self.train_set)))
             else:
-                with open('../data/prepared/train_set.data', 'rb') as f_train_in:
+                with open('../data/prepared/train_set.pkl', 'rb') as f_train_in:
                     self.train_set = pkl.load(f_train_in)
                 f_train_in.close()
 
@@ -54,7 +54,7 @@ class BRCDataset(object):
                     self.dev_set += self._load_dataset(dev_file)
                 self.logger.info('Dev set size: {} questions.'.format(len(self.dev_set)))
             else:
-                with open('../data/prepared/dev_set.data', 'rb') as f_dev_in:
+                with open('../data/prepared/dev_set.pkl', 'rb') as f_dev_in:
                     self.dev_set = pkl.load(f_dev_in)
                 f_dev_in.close()
 
@@ -64,7 +64,7 @@ class BRCDataset(object):
                     self.test_set += self._load_dataset(test_file)
                 self.logger.info('Test set size: {} questions.'.format(len(self.test_set)))
             else:
-                with open('../data/prepared/test_set.data', 'rb') as f_test_in:
+                with open('../data/prepared/test_set.pkl', 'rb') as f_test_in:
                     self.test_set = pkl.load(f_test_in)
                 f_test_in.close()
 
