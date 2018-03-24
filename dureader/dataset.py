@@ -18,7 +18,7 @@
 This module implements data process strategies.
 """
 
-import simplejson as json
+import ujson as json
 import logging
 import numpy as np
 import pickle as pkl

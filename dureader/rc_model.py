@@ -24,7 +24,7 @@ Note that we use Pointer Network for the decoding stage of both models.
 import os
 import time
 import logging
-import simplejson as json
+import ujson as json
 import numpy as np
 import tensorflow as tf
 from utils import compute_bleu_rouge
@@ -347,7 +347,7 @@ class RCModel(object):
             result_file = os.path.join(result_dir, result_prefix + '.json')
             with open(result_file, 'w') as fout:
                 for pred_answer in pred_answers:
-                    fout.write(json.dumps(pred_answer, encoding='utf8', ensure_ascii=False) + '\n')
+                    fout.write(json.dumps(pred_answer, ensure_ascii=False) + '\n')
 
             self.logger.info('Saving {} results to {}'.format(result_prefix, result_file))
 

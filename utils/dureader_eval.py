@@ -19,8 +19,7 @@ This module computes evaluation metrics for DuReader dataset.
 """
 
 import argparse
-import simplejson as json
-import sys
+import ujson as json
 import zipfile
 
 from collections import Counter
@@ -227,8 +226,7 @@ def get_metrics(pred_result, ref_result, task, source):
                 if question_id in pred_result:
                     pred_result_filtered[question_id] = pred_result[question_id]
 
-    if task == 'main' or task == 'all' \
-            or task == 'description':
+    if task == 'main' or task == 'all' or task == 'description':
         pred_dict, ref_dict = prepare_bleu(pred_result_filtered,
                                            ref_result_filtered,
                                            task)
@@ -497,8 +495,7 @@ def format_metrics(metrics, task, err_msg):
             for src in sources:
                 obj = {
                     "name": name,
-                    "value": \
-                        round(metrics[src].get(name, 0) * 100, 2),
+                    "value": round(metrics[src].get(name, 0) * 100, 2),
                     "type": src,
                 }
                 data.append(obj)

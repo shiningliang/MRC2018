@@ -19,17 +19,17 @@ This module prepares and runs the whole system.
 """
 
 import sys
-sys.path.append('..')
 import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
 import pickle
 import argparse
 import logging
-from pretrain_embedding import pre_train
+from utils.pretrain_embedding import pre_train
 from dataset import BRCDataset
 from vocab import Vocab
 from rc_model import RCModel
+
+sys.path.append('..')
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 def parse_args():
@@ -59,7 +59,7 @@ def parse_args():
                                 help='weight decay')
     train_settings.add_argument('--dropout_keep_prob', type=float, default=1,
                                 help='dropout keep rate')
-    train_settings.add_argument('--batch_size', type=int, default=32,
+    train_settings.add_argument('--batch_size', type=int, default=64,
                                 help='train batch size')
     train_settings.add_argument('--epochs', type=int, default=10,
                                 help='train epochs')
@@ -114,15 +114,6 @@ def prepare(args):
     checks data, creates the directories, prepare the vocabulary and embeddings
     """
     logger = logging.getLogger("brc")
-    logger.info('Checking the data files...')
-    # 检查数据文件是否存�?
-    for data_path in args.train_files + args.dev_files + args.test_files:
-        assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
-    logger.info('Preparing the directories...')
-    for dir_path in [args.vocab_dir, args.model_dir, args.result_dir, args.summary_dir]:
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-
     logger.info('Building vocabulary...')
     # 载入数据
     brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
@@ -265,6 +256,15 @@ def run():
 
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+
+    logger.info('Checking the data files...')
+    # 检查数据文件是否存在
+    for data_path in args.train_files + args.dev_files + args.test_files:
+        assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
+    logger.info('Preparing the directories...')
+    for dir_path in [args.vocab_dir, args.model_dir, args.result_dir, args.summary_dir]:
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
     model_saver = None
 
     # 解析各阶段参数，不为空则转到

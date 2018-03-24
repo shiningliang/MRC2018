@@ -1,6 +1,4 @@
-import sys
 import os
-sys.path.append('..')
 
 
 def load_data(brc_data, tar_dir):

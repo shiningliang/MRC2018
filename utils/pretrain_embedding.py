@@ -1,9 +1,8 @@
 import sys
 import os
 import logging
-# import argparse
 from gensim.models import word2vec
-import json_to_sentence
+from .json_to_sentence import load_data
 
 
 def pre_train(brc_data, segmented_dir):
@@ -25,7 +24,7 @@ def pre_train(brc_data, segmented_dir):
     # args = parser.parse_args()
     # for files in args.train_files + args.dev_files + args.test_files:
     #     json_to_sentence.load_data(files, args.segmented_dir)
-    json_to_sentence.load_data(brc_data, segmented_dir)
+    load_data(brc_data, segmented_dir)
 
     program = os.path.basename(sys.argv[0])
     logger = logging.getLogger(program)
@@ -33,7 +32,7 @@ def pre_train(brc_data, segmented_dir):
     logging.root.setLevel(level=logging.INFO)
     logger.info("running %s" % ' '.join(sys.argv))
 
-    model = word2vec.Word2Vec(word2vec.PathLineSentences(segmented_dir), size=300, min_count=2, workers=8)
+    model = word2vec.Word2Vec(word2vec.PathLineSentences(segmented_dir), size=300, min_count=2, workers=8, iter=10)
     with open(os.path.join(segmented_dir, 'w2v_dic.data'), 'w', encoding='utf-8') as f:
         for word in model.wv.vocab:
             f.write(word + ' ')
