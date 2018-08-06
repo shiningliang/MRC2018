@@ -3,6 +3,9 @@
 - 参赛模型：BiDAF+Self Attention+Pre(single)
 - 最终排名：28/105（菜鸡第一次参赛）
 
+## 最近更新
+- 2018/08/06更新，po主参加了在[语言与智能高峰论坛](http://www.cipsc.org.cn/lis2018/index.html)上举办的比赛颁奖典礼，发现都是前期特征工程提升巨大，模型上未有亮眼工作，如果拿到了前几名的技术报告，会推上来
+
 ## 参考模型
 - [R-Net](https://www.microsoft.com/en-us/research/wp-content/uploads/2017/05/r-net.pdf)
 - [BiDAF](https://allenai.github.io/bi-att-flow/)
