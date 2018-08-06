@@ -5,6 +5,7 @@
 
 ## 最近更新
 - 2018/08/06更新，po主参加了在[语言与智能高峰论坛](http://www.cipsc.org.cn/lis2018/index.html)上举办的比赛颁奖典礼，发现都是前期特征工程提升巨大，模型上未有亮眼工作，如果拿到了前几名的技术报告，会推上来
+- 2018/08/06更新，百度现已开放全部数据，下边的数据集统计表中已更新链接，比赛成绩也会放上来，大家可以日常打榜。颁奖典礼上负责人表示，比赛明年还会继续举办，大家加油！
 
 ## 参考模型
 - [R-Net](https://www.microsoft.com/en-us/research/wp-content/uploads/2017/05/r-net.pdf)
@@ -29,7 +30,7 @@
 
 类型 | train | dev | test
 ---|---|---|---|
-比赛 | 27W| 1W | 2W |
+[比赛](http://ai.baidu.com/broad/download?dataset=dureader) | 27W| 1W | 2W |
 [开放](http://ai.baidu.com/broad/download) | 20W | 1W | 1W
 
 ## Performance
