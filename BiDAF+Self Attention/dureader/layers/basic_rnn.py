@@ -1,19 +1,3 @@
-# -*- coding:utf8 -*-
-# ==============================================================================
-# Copyright 2017 Baidu.com, Inc. All Rights Reserved
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
 """
 This module provides wrappers for variants of RNN in Tensorflow
 """
@@ -38,29 +22,26 @@ def rnn(rnn_type, inputs, length, hidden_size, layer_num=1, dropout_keep_prob=No
         RNN outputs and final state
     """
     if not rnn_type.startswith('bi'):
-        cell = get_cell(rnn_type, hidden_size, layer_num, dropout_keep_prob)
-        outputs, state = tf.nn.dynamic_rnn(cell, inputs, sequence_length=length, dtype=tf.float32)
+        cells = tc.rnn.MultiRNNCell([get_nor_cell(rnn_type, hidden_size, dropout_keep_prob) for _ in range(layer_num)],
+                                    state_is_tuple=True)
+        outputs, state = tf.nn.dynamic_rnn(cells, inputs, sequence_length=length, dtype=tf.float32)
         if rnn_type.endswith('lstm'):
             c, h = state
             state = h
     else:
-        cell_fw = get_cell(rnn_type, hidden_size, layer_num, dropout_keep_prob)
-        cell_bw = get_cell(rnn_type, hidden_size, layer_num, dropout_keep_prob)
-        outputs, state = tf.nn.bidirectional_dynamic_rnn(
-            cell_bw, cell_fw, inputs, sequence_length=length, dtype=tf.float32
-        )
-        state_fw, state_bw = state
-        if rnn_type.endswith('lstm'):
-            c_fw, h_fw = state_fw
-            c_bw, h_bw = state_bw
-            state_fw, state_bw = h_fw, h_bw
-        if concat:
-            outputs = tf.concat(outputs, 2)
-            state = tf.concat([state_fw, state_bw], 1)
+        if layer_num > 1:
+            cell_fw = [get_nor_cell(rnn_type, hidden_size, dropout_keep_prob) for _ in range(layer_num)]
+            cell_bw = [get_nor_cell(rnn_type, hidden_size, dropout_keep_prob) for _ in range(layer_num)]
+            outputs, state_fw, state_bw = tc.rnn.stack_bidirectional_dynamic_rnn(
+                cell_fw, cell_bw, inputs, sequence_length=length, dtype=tf.float32
+            )
         else:
-            outputs = outputs[0] + outputs[1]
-            state = state_fw + state_bw
-    return outputs, state
+            cell_fw = get_nor_cell(rnn_type, hidden_size, dropout_keep_prob)
+            cell_bw = get_nor_cell(rnn_type, hidden_size, dropout_keep_prob)
+            outputs, state = tf.nn.bidirectional_dynamic_rnn(
+                cell_fw, cell_bw, inputs, sequence_length=length, dtype=tf.float32
+            )
+    return outputs
 
 
 def get_cell(rnn_type, hidden_size, layer_num=1, dropout_keep_prob=None):
@@ -80,14 +61,16 @@ def get_cell(rnn_type, hidden_size, layer_num=1, dropout_keep_prob=None):
         cell = tc.rnn.GRUCell(num_units=hidden_size)
     elif rnn_type.endswith('rnn'):
         cell = tc.rnn.BasicRNNCell(num_units=hidden_size)
+    elif rnn_type.endswith('sru'):
+        cell = tc.rnn.SRUCell(num_units=hidden_size)
+    elif rnn_type.endswith('indy'):
+        cell = tc.rnn.IndyGRUCell(num_units=hidden_size)
     else:
         raise NotImplementedError('Unsuported rnn type: {}'.format(rnn_type))
     if dropout_keep_prob is not None:
         cell = tc.rnn.DropoutWrapper(cell,
                                      input_keep_prob=dropout_keep_prob,
                                      output_keep_prob=dropout_keep_prob)
-    if layer_num > 1:
-        cell = tc.rnn.MultiRNNCell([cell]*layer_num, state_is_tuple=True)
     return cell
 
 
