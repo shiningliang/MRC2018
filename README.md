@@ -4,6 +4,9 @@
 - 最终排名：28/105（菜鸡第一次参赛）
 
 ## 最近更新
+- 2018/09/11更新，AAAI赶完了，感谢大家的star。
+1. basic_rnn.py 现已支持multi-layer的RNNCell(Tensorflow单层RNN和多层RNN的用法完全不同。。。)，添加了最新的SRU和IndyRNN
+2. rc_model.py Adam更换为速度更快的LazyAdam，需tf>=1.9
 - 2018/08/20更新，po主在赶AAAI，焦头烂额。。。先简单写一下，整个模型的训练和修改流程（以BiDAF+Self Attention为例，后续做成PDF详解）：
 1. /dureader/run.py --prepare（数据预处理） --train(训练、预测)
 2. /dureader/rc_model.py 模型（做修改可从此处着手）
@@ -11,7 +14,7 @@
 4. /dureader/json_to_sentence.py 从原始json文件中提取文本
 5. /dureader/pretrain_embedding.py 预训练词向量
 6. /dureader/SIF.py 参考论文A Simple but Tough-to-Beat Baseline for Sentence Embeddings，但效果不佳。。。
-4. /utils 评价指标
+7. /utils 评价指标
 - 2018/08/20更新，最好成绩使用的参数即为BiDAF+Self Attention/run.py中[默认参数](https://github.com/shiningliang/MRC2018/blob/master/BiDAF%2BSelf%20Attention/dureader/run.py#L22)
 - 2018/08/06更新，po主参加了在[语言与智能高峰论坛](http://www.cipsc.org.cn/lis2018/index.html)上举办的比赛颁奖典礼，发现都是前期特征工程提升巨大，模型上未有亮眼工作，如果拿到了前几名的技术报告，会推上来
 - 2018/08/06更新，百度现已开放全部数据，下边的数据集统计表中已更新链接，比赛成绩也会放上来，大家可以日常打榜。颁奖典礼上负责人表示，比赛明年还会继续举办，大家加油！
@@ -30,7 +33,7 @@
 - numpy
 
 ### Python Packages
-- tensorflow-gpu >= 1.5.0
+- tensorflow-gpu >= 1.9.0
 - ujson
 - pickle
 - tqdm

@@ -27,6 +27,7 @@ import logging
 import ujson as json
 import numpy as np
 import tensorflow as tf
+import tensorflow.contrib as tc
 from utils import mrc_eval
 from utils.bleu import BLEUWithBonus
 from utils.rouge import RougeLWithBonus
@@ -226,7 +227,7 @@ class RCModel(object):
             if self.optim_type == 'adagrad':
                 self.optimizer = tf.train.AdagradOptimizer(self._lr)
             elif self.optim_type == 'adam':
-                self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
+                self.optimizer = tc.opt.LazyAdamOptimizer(self.learning_rate)
             elif self.optim_type == 'rprop':
                 self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate)
             elif self.optim_type == 'sgd':
