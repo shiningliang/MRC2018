@@ -3,7 +3,7 @@ This module provides wrappers for variants of RNN in Tensorflow
 """
 
 import tensorflow as tf
-from tensorflow.contrib.cudnn_rnn.python.layers import cudnn_rnn
+from tensorflow.contrib import cudnn_rnn
 
 
 def rnn(rnn_type, inputs, hidden_size, batch_size, training, layer_num=1, dropout_keep_prob=None):
@@ -19,7 +19,7 @@ def rnn(rnn_type, inputs, hidden_size, batch_size, training, layer_num=1, dropou
         RNN outputs and final state
     """
     if not rnn_type.startswith('bi'):
-        cell = get_cell(rnn_type, hidden_size, layer_num, dropout_keep_prob)
+        cell = get_cell(rnn_type, hidden_size, layer_num, 'unidirectional')
         inputs = tf.transpose(inputs, [1, 0, 2])
         c = tf.zeros([layer_num, batch_size, hidden_size], tf.float32)
         h = tf.zeros([layer_num, batch_size, hidden_size], tf.float32)
@@ -28,7 +28,7 @@ def rnn(rnn_type, inputs, hidden_size, batch_size, training, layer_num=1, dropou
             c, h = state
             state = h
     else:
-        cell = get_cell(rnn_type, hidden_size, layer_num, cudnn_rnn.CUDNN_RNN_BIDIRECTION)
+        cell = get_cell(rnn_type, hidden_size, layer_num, 'bidirectional')
         inputs = tf.transpose(inputs, [1, 0, 2])
         outputs, state = cell(inputs, training=training)
         # if rnn_type.endswith('lstm'):
@@ -45,7 +45,7 @@ def rnn(rnn_type, inputs, hidden_size, batch_size, training, layer_num=1, dropou
     return outputs, state
 
 
-def get_cell(rnn_type, hidden_size, layer_num=1, direction=cudnn_rnn.CUDNN_RNN_UNIDIRECTION):
+def get_cell(rnn_type, hidden_size, layer_num=1, direction='bidirectional'):
     if rnn_type.endswith('lstm'):
         cudnn_cell = cudnn_rnn.CudnnLSTM(num_layers=layer_num, num_units=hidden_size, direction=direction,
                                          dropout=0)
